@@ -18,7 +18,7 @@ namespace FurniCracker
             string[] Files = Directory.GetFiles("ToCrack", "*.swf");
             Logging.WriteLine("Listed " + Files.Length + " files to crack.", ConsoleColor.Blue);
 
-            foreach (string CurrentFile in Files)
+            Parallel.ForEach(Files, CurrentFile =>
             {
                 string CurrentShortName = CurrentFile.Substring(8).Split('.')[0];
                 if (Directory.Exists("temp\\" + CurrentShortName))
@@ -30,7 +30,7 @@ namespace FurniCracker
                 string[] Binaries = Directory.GetFiles("temp\\" + CurrentShortName, "*.bin");
                 Crack(CurrentShortName, Binaries);
                 Directory.Delete("temp\\" + CurrentShortName, true);
-            }
+            });
             Logging.WriteLine("");
             Logging.WriteLine("Done :)", ConsoleColor.Yellow);
             Console.ReadLine();
@@ -65,8 +65,15 @@ namespace FurniCracker
                 Writer.Close();
 
                 Compile(CurrentShortName, new Regex("-(.*).bin").Match(CurrentFile).Groups[1].ToString());
-                File.Move("temp\\" + CurrentShortName + "\\" + CurrentShortName + ".swf", "Cracked\\" + CurrentShortName + ".swf");
-                Logging.WriteLine(CurrentShortName + " cracked! ", ConsoleColor.Green);
+                try
+                {
+                    File.Move("temp\\" + CurrentShortName + "\\" + CurrentShortName + ".swf", "Cracked\\" + CurrentShortName + ".swf");
+                    Logging.WriteLine(CurrentShortName + " cracked! ", ConsoleColor.Green);
+                }
+                catch
+                {
+                    // Ignored
+                }
             }
         }
 
