@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FurniCracker
 {
@@ -10,7 +6,7 @@ namespace FurniCracker
     {
         static void Main(string[] args)
         {
-            AppDomain currentDomain = AppDomain.CurrentDomain;
+            var currentDomain = AppDomain.CurrentDomain;
             currentDomain.UnhandledException += new UnhandledExceptionEventHandler(ExceptionHandler);
 
             Cracker.Initialize();
@@ -18,7 +14,7 @@ namespace FurniCracker
 
         static void ExceptionHandler(object sender, UnhandledExceptionEventArgs args)
         {
-            Exception e = (Exception)args.ExceptionObject;
+            var e = (Exception)args.ExceptionObject;
             Logging.WriteLine("Application Error Occured: " + e.ToString(), ConsoleColor.Red);
             Console.ReadKey(true);
         }

@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
 using System.Diagnostics;
+using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace FurniCracker
 {
@@ -13,62 +11,67 @@ namespace FurniCracker
     {
         public static void Initialize()
         {
+            Logging.WriteLine("Input folder: ToCrack, Output folder: Cracked");
             Logging.WriteLine("Preparing to crack...\n", ConsoleColor.Yellow);
 
-            string[] Files = Directory.GetFiles("ToCrack", "*.swf");
-            Logging.WriteLine("Listed " + Files.Length + " files to crack.", ConsoleColor.Blue);
+            Directory.CreateDirectory("ToCrack");
+            Directory.CreateDirectory("Cracked");
+            Directory.CreateDirectory("temp");
 
-            Parallel.ForEach(Files, CurrentFile =>
+            var files = Directory.GetFiles("ToCrack", "*.swf");
+            Logging.WriteLine("Listed " + files.Length + " files to crack.", ConsoleColor.Blue);
+
+            Parallel.ForEach(files, currentFile =>
             {
-                string CurrentShortName = CurrentFile.Substring(8).Split('.')[0];
-                if (Directory.Exists("temp\\" + CurrentShortName))
-                    Directory.Delete("temp\\" + CurrentShortName, true);
-                Directory.CreateDirectory("temp\\" + CurrentShortName);
-                File.Copy(CurrentFile, "temp\\" + CurrentShortName + "\\" + CurrentShortName + ".swf");
-                Decompile(CurrentShortName);
+                var currentShortName = currentFile.Substring(8).Split('.')[0];
+                if (Directory.Exists("temp\\" + currentShortName))
+                    Directory.Delete("temp\\" + currentShortName, true);
+                Directory.CreateDirectory("temp\\" + currentShortName);
+                File.Copy(currentFile, "temp\\" + currentShortName + "\\" + currentShortName + ".swf");
+                Decompile(currentShortName);
 
-                string[] Binaries = Directory.GetFiles("temp\\" + CurrentShortName, "*.bin");
-                Crack(CurrentShortName, Binaries);
-                Directory.Delete("temp\\" + CurrentShortName, true);
+                var binaries = Directory.GetFiles("temp\\" + currentShortName, "*.bin");
+                Crack(currentShortName, binaries);
+                Directory.Delete("temp\\" + currentShortName, true);
             });
             Logging.WriteLine("");
             Logging.WriteLine("Done :)", ConsoleColor.Yellow);
             Console.ReadLine();
         }
 
-        private static void Crack(string CurrentShortName, string[] Binaries)
+        private static void Crack(string currentShortName, IEnumerable<string> binaries)
         {
-            foreach (string CurrentFile in Binaries)
+            foreach (var currentFile in binaries)
             {
-                StreamReader Reader = new StreamReader(CurrentFile);
-                string Content = Reader.ReadToEnd();
-                Reader.Close();
+                var reader = new StreamReader(currentFile);
+                var content = reader.ReadToEnd();
+                reader.Close();
 
-                if (!Content.Contains("<visualizationData"))
+                if (!content.Contains("<visualizationData"))
                     continue;
-                if (Content.Contains("<graphics>"))
+                if (content.Contains("<graphics>"))
                 {
-                    Logging.WriteLine(CurrentShortName + " is already cracked.", ConsoleColor.Yellow);
+                    Logging.WriteLine(currentShortName + " is already cracked.", ConsoleColor.Yellow);
                     return;
                 }
 
-                string replace1 = "<visualizationData type=\"" + CurrentShortName + "\">";
-                string replace2 = "<visualizationData type=\"" + CurrentShortName + "\"><graphics>";
-                Content = Content.Replace(replace1, replace2);
+                var replace1 = "<visualizationData type=\"" + currentShortName + "\">";
+                var replace2 = "<visualizationData type=\"" + currentShortName + "\"><graphics>";
+                content = content.Replace(replace1, replace2);
 
                 replace1 = "</visualizationData>";
                 replace2 = "</graphics></visualizationData>";
-                Content = Content.Replace(replace1, replace2);
+                content = content.Replace(replace1, replace2);
 
-                StreamWriter Writer = new StreamWriter(CurrentFile);
-                Writer.Write(Content);
-                Writer.Close();
+                var writer = new StreamWriter(currentFile);
+                writer.Write(content);
+                writer.Close();
 
-                Compile(CurrentShortName, new Regex("-(.*).bin").Match(CurrentFile).Groups[1].ToString());
+                Compile(currentShortName, new Regex("-(.*).bin").Match(currentFile).Groups[1].ToString());
                 try
                 {
-                    File.Move("temp\\" + CurrentShortName + "\\" + CurrentShortName + ".swf", "Cracked\\" + CurrentShortName + ".swf");
-                    Logging.WriteLine(CurrentShortName + " cracked! ", ConsoleColor.Green);
+                    File.Move("temp\\" + currentShortName + "\\" + currentShortName + ".swf", "Cracked\\" + currentShortName + ".swf");
+                    Logging.WriteLine(currentShortName + " cracked! ", ConsoleColor.Green);
                 }
                 catch
                 {
@@ -77,22 +80,22 @@ namespace FurniCracker
             }
         }
 
-        private static void Decompile(string Item)
+        private static void Decompile(string item)
         {
             Process.Start(new ProcessStartInfo()
             {
                 FileName = "edit.bat",
-                Arguments = "d " + Item,
+                Arguments = "d " + item,
                 WindowStyle = ProcessWindowStyle.Hidden
             }).WaitForExit();
         }
 
-        private static void Compile(string Name, string Id)
+        private static void Compile(string name, string id)
         {
             Process.Start(new ProcessStartInfo()
             {
                 FileName = "edit.bat",
-                Arguments = "c " + Name + " " + Id,
+                Arguments = "c " + name + " " + id,
                 WindowStyle = ProcessWindowStyle.Hidden
             }).WaitForExit();
         }
