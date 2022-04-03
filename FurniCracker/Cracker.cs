@@ -25,15 +25,23 @@ namespace FurniCracker
             Parallel.ForEach(files, currentFile =>
             {
                 var currentShortName = currentFile.Substring(8).Split('.')[0];
-                if (Directory.Exists("temp\\" + currentShortName))
-                    Directory.Delete("temp\\" + currentShortName, true);
-                Directory.CreateDirectory("temp\\" + currentShortName);
-                File.Copy(currentFile, "temp\\" + currentShortName + "\\" + currentShortName + ".swf");
-                Decompile(currentShortName);
+                try
+                {
+                    if (Directory.Exists("temp\\" + currentShortName))
+                        Directory.Delete("temp\\" + currentShortName, true);
+                    Directory.CreateDirectory("temp\\" + currentShortName);
+                    File.Copy(currentFile, "temp\\" + currentShortName + "\\" + currentShortName + ".swf");
+                    Decompile(currentShortName);
 
-                var binaries = Directory.GetFiles("temp\\" + currentShortName, "*.bin");
-                Crack(currentShortName, binaries);
-                Directory.Delete("temp\\" + currentShortName, true);
+                    var binaries = Directory.GetFiles("temp\\" + currentShortName, "*.bin");
+                    Crack(currentShortName, binaries);
+                    Directory.Delete("temp\\" + currentShortName, true);
+                }
+                catch (Exception e)
+                {
+                    Logging.WriteLine($"Failed to handle {currentShortName}. {e.Message} {e.StackTrace}");
+                    throw;
+                }
             });
             Logging.WriteLine("");
             Logging.WriteLine("Done :)", ConsoleColor.Yellow);
@@ -91,7 +99,7 @@ namespace FurniCracker
                 return currentShortName;
 
             return content.Split('\n').First(s => s.Contains("<visualizationData ")).Replace("<visualizationData ", "")
-                .Replace("type=", "").Replace("\"", "").Replace(">", "");
+                .Replace("type=", "").Replace("\"", "").Replace(">", "").Replace("\r", "");
         }
 
         private static void Decompile(string item)
