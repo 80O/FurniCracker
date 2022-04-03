@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -55,8 +56,12 @@ namespace FurniCracker
                     return;
                 }
 
-                var replace1 = "<visualizationData type=\"" + currentShortName + "\">";
-                var replace2 = "<visualizationData type=\"" + currentShortName + "\"><graphics>";
+                // Remove old closing tag for bugged furnis.
+                content = content.Replace("</graphics>", "");
+
+                var shortName = FindShortName(currentShortName, content);
+                var replace1 = "<visualizationData type=\"" + shortName + "\">";
+                var replace2 = "<visualizationData type=\"" + shortName + "\"><graphics>";
                 content = content.Replace(replace1, replace2);
 
                 replace1 = "</visualizationData>";
@@ -78,6 +83,15 @@ namespace FurniCracker
                     // Ignored
                 }
             }
+        }
+
+        private static string FindShortName(string currentShortName, string content)
+        {
+            if (content.Contains("<visualizationData type=\"" + currentShortName + "\">"))
+                return currentShortName;
+
+            return content.Split('\n').First(s => s.Contains("<visualizationData ")).Replace("<visualizationData ", "")
+                .Replace("type=", "").Replace("\"", "").Replace(">", "");
         }
 
         private static void Decompile(string item)
